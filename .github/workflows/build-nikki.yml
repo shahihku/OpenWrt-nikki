@@ -35,14 +35,8 @@ jobs:
         run: |
           tar -czf nikki-${{ matrix.arch }}.tar.gz -C artifacts/${{ matrix.arch }} .
 
-      - name: Upload IPK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: nikki-ipk-${{ matrix.arch }}
-          path: artifacts/${{ matrix.arch }}/*.ipk
-
       - name: Upload tar.gz artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nikki-targz-${{ matrix.arch }}
+          name: nikki-${{ matrix.arch }}
           path: nikki-${{ matrix.arch }}.tar.gz
