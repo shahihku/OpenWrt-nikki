@@ -17,21 +17,32 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Build package
+      - name: Build packages
         uses: openwrt/gh-action-sdk@main
         env:
           ARCH: ${{ matrix.arch }}
           FEEDNAME: nikki
-          PACKAGES: luci-app-nikki
+          PACKAGES: nikki luci-app-nikki
           NO_REFRESH_CHECK: true
 
-      - name: Pack artifacts
+      - name: Collect IPK files
         run: |
           mkdir -p artifacts/${{ matrix.arch }}
           find bin -name '*nikki*.ipk' -exec cp -v {} artifacts/${{ matrix.arch }}/ \;
+          ls -lh artifacts/${{ matrix.arch }}/
 
-      - name: Upload artifacts
+      - name: Create tar.gz like upstream
+        run: |
+          tar -czf nikki-${{ matrix.arch }}.tar.gz -C artifacts/${{ matrix.arch }} .
+
+      - name: Upload IPK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nikki-${{ matrix.arch }}
-          path: artifacts/${{ matrix.arch }}
+          name: nikki-ipk-${{ matrix.arch }}
+          path: artifacts/${{ matrix.arch }}/*.ipk
+
+      - name: Upload tar.gz artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nikki-targz-${{ matrix.arch }}
+          path: nikki-${{ matrix.arch }}.tar.gz
