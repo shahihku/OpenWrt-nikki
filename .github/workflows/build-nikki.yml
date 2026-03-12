@@ -64,11 +64,11 @@ jobs:
             -F "run_id=${{ github.run_id }}" \
             -F "sha256=${SHA256}")
 
-        python3 - <<'PY' "$RESPONSE"
-import json, sys
-data = json.loads(sys.argv[1])
-print(f"{data.get('success')} - {data.get('message')}")
-PY
-      
+          python3 - <<'PY' "$RESPONSE"
+          import json, sys
+          data = json.loads(sys.argv[1])
+          print(f"{data.get('success')} - {data.get('message')}")
+          PY
+
       - name: Done
         run: echo "Build uploaded successfully"
