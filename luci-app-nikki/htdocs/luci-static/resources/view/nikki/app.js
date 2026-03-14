@@ -2,6 +2,7 @@
 'require form';
 'require view';
 'require uci';
+'require ui';
 'require poll';
 'require tools.nikki as nikki';
 
@@ -12,7 +13,7 @@ function renderStatus(running) {
 function updateStatus(element, running) {
     if (element) {
         element.style.color = running ? 'green' : 'red';
-        element.value = running ? _('Running') : _('Not Running');
+        element.value = running ? _('🟢 Running') : _('🔴 Not Running');
     }
     return element;
 }
@@ -37,7 +38,7 @@ return view.extend({
 
         m = new form.Map('nikki', _('Nikki'), `${_('Transparent Proxy with Mihomo on OpenWrt.')} <a href="https://github.com/nikkinikki-org/OpenWrt-nikki/wiki" target="_blank">${_('How To Use')}</a>`);
 
-        s = m.section(form.TableSection, 'status', _('Status'));
+        s = m.section(form.TableSection, 'status', _('🔋 Status'));
         s.anonymous = true;
 
         o = s.option(form.Value, '_app_version', _('App Version'));
@@ -91,10 +92,23 @@ return view.extend({
             return nikki.openDashboard();
         };
 
-        s = m.section(form.NamedSection, 'config', 'config', _('App Config'));
+        s = m.section(form.NamedSection, 'config', 'config', _('✨ App Config'));
 
-        o = s.option(form.Flag, 'enabled', _('Enable'));
-        o.rmempty = false;
+								o = s.option(form.DummyValue, '_enabled_toggle', _('Enable'));
+								o.rawhtml = true;
+								o.cfgvalue = function(section_id) {
+												const enabled = uci.get('nikki', section_id, 'enabled') == '1';
+
+												return `
+																<label class="nikki-switch">
+																				<input type="checkbox"
+																											class="nikki-switch-input"
+																											data-section="${section_id}"
+																											${enabled ? 'checked' : ''}>
+																				<span class="nikki-switch-slider"></span>
+																</label>
+												`;
+								};
 
         o = s.option(form.ListValue, 'profile', _('Choose Profile'));
         o.optional = true;
@@ -186,6 +200,81 @@ return view.extend({
         o = s.taboption('environment_variable', form.Flag, 'env_skip_system_ipv6_check', _('Skip System IPv6 Check'));
         o.rmempty = false;
 
-        return m.render();
+								return m.render().then((node) => {
+												node.appendChild(E('style', {}, `
+																.nikki-switch {
+																				position: relative;
+																				display: inline-block;
+																				width: 50px;
+																				height: 26px;
+																				vertical-align: middle;
+																}
+
+																.nikki-switch input {
+																				opacity: 0;
+																				width: 0;
+																				height: 0;
+																}
+
+																.nikki-switch-slider {
+																				position: absolute;
+																				cursor: pointer;
+																				inset: 0;
+																				background-color: #ccc;
+																				transition: .25s;
+																				border-radius: 26px;
+																}
+
+																.nikki-switch-slider:before {
+																				position: absolute;
+																				content: "";
+																				height: 20px;
+																				width: 20px;
+																				left: 3px;
+																				top: 3px;
+																				background-color: white;
+																				transition: .25s;
+																				border-radius: 50%;
+																				box-shadow: 0 1px 3px rgba(0,0,0,.25);
+																}
+
+																.nikki-switch-input:checked + .nikki-switch-slider {
+																				background-color: #0b5fa5;
+																}
+
+																.nikki-switch-input:checked + .nikki-switch-slider:before {
+																				transform: translateX(24px);
+																}
+
+																.nikki-switch-input:disabled + .nikki-switch-slider {
+																				opacity: .6;
+																				cursor: wait;
+																}
+												`));
+
+												node.querySelectorAll('.nikki-switch-input').forEach((input) => {
+																input.addEventListener('change', () => {
+																				const section_id = input.getAttribute('data-section');
+																				const value = input.checked ? '1' : '0';
+
+																				input.disabled = true;
+
+																				uci.set('nikki', section_id, 'enabled', value);
+
+																				uci.save()
+																								.then(() => uci.apply())
+																								.then(() => nikki.reload())
+																								.then(() => {
+																												window.setTimeout(() => location.reload(), 500);
+																								})
+																								.catch((err) => {
+																												input.disabled = false;
+																												ui.addNotification(null, E('p', {}, _('Failed to toggle Nikki: ') + err));
+																								});
+																});
+												});
+
+												return node;
+								});
     }
 });
