@@ -45,46 +45,55 @@ endef
 define Package/nikki/conffiles
 /etc/config/nikki
 /etc/nikki/mixin.yaml
+/etc/nikki/profiles/mahavpn-simple.yaml
 endef
 
 define Package/nikki/install
+	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
+
+	$(INSTALL_DIR) $(1)/usr/libexec/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/mihomo $(1)/usr/libexec/nikki
+
 	$(INSTALL_DIR) $(1)/etc/nikki
+	$(INSTALL_DIR) $(1)/etc/nikki/ucode
+	$(INSTALL_DIR) $(1)/etc/nikki/scripts
+	$(INSTALL_DIR) $(1)/etc/nikki/nftables
 	$(INSTALL_DIR) $(1)/etc/nikki/profiles
+	$(INSTALL_DIR) $(1)/etc/nikki/subscriptions
 	$(INSTALL_DIR) $(1)/etc/nikki/run
+	$(INSTALL_DIR) $(1)/etc/nikki/run/providers
+	$(INSTALL_DIR) $(1)/etc/nikki/run/providers/rule
+	$(INSTALL_DIR) $(1)/etc/nikki/run/providers/proxy
+
+	$(INSTALL_DATA) $(CURDIR)/files/mixin.yaml $(1)/etc/nikki/mixin.yaml
+	$(INSTALL_DATA) $(CURDIR)/files/profiles/mahavpn-simple.yaml $(1)/etc/nikki/profiles/mahavpn-simple.yaml
+
+	$(INSTALL_BIN) $(CURDIR)/files/ucode/include.uc $(1)/etc/nikki/ucode/include.uc
+	$(INSTALL_BIN) $(CURDIR)/files/ucode/mixin.uc $(1)/etc/nikki/ucode/mixin.uc
+	$(INSTALL_BIN) $(CURDIR)/files/ucode/hijack.ut $(1)/etc/nikki/ucode/hijack.ut
+
+	$(INSTALL_BIN) $(CURDIR)/files/scripts/include.sh $(1)/etc/nikki/scripts/include.sh
+	$(INSTALL_BIN) $(CURDIR)/files/scripts/firewall_include.sh $(1)/etc/nikki/scripts/firewall_include.sh
+	$(INSTALL_BIN) $(CURDIR)/files/scripts/debug.sh $(1)/etc/nikki/scripts/debug.sh
+
+	$(INSTALL_BIN) $(CURDIR)/files/nftables/geoip_cn.nft $(1)/etc/nikki/nftables/geoip_cn.nft
+	$(INSTALL_BIN) $(CURDIR)/files/nftables/geoip6_cn.nft $(1)/etc/nikki/nftables/geoip6_cn.nft
+
+	$(CP) $(CURDIR)/files/run/. $(1)/etc/nikki/run/
+
 	$(INSTALL_DIR) $(1)/etc/config
+	$(INSTALL_CONF) $(CURDIR)/files/nikki.conf $(1)/etc/config/nikki
+
 	$(INSTALL_DIR) $(1)/etc/init.d
+	$(INSTALL_BIN) $(CURDIR)/files/nikki.init $(1)/etc/init.d/nikki
+
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	$(INSTALL_DIR) $(1)/usr/share/nikki
-	$(INSTALL_DIR) $(1)/usr/share/rpcd/ucode
-	$(INSTALL_DIR) $(1)/usr/libexec/nikki
-	$(INSTALL_DIR) $(1)$(NIKKI_STATE_DIR)
-	$(INSTALL_DIR) $(1)/usr/share/nftables.d/ruleset-post
+	$(INSTALL_BIN) $(CURDIR)/files/uci-defaults/firewall.sh $(1)/etc/uci-defaults/99_firewall_nikki
+	$(INSTALL_BIN) $(CURDIR)/files/uci-defaults/init.sh $(1)/etc/uci-defaults/99_init_nikki
+	$(INSTALL_BIN) $(CURDIR)/files/uci-defaults/migrate.sh $(1)/etc/uci-defaults/99_migrate_nikki
+
 	$(INSTALL_DIR) $(1)/lib/upgrade/keep.d
-
-	$(INSTALL_CONF) ./files/mixin.yaml $(1)/etc/nikki/mixin.yaml
-	$(INSTALL_CONF) ./files/profiles/mahavpn-simple.yaml $(1)/etc/nikki/profiles/mahavpn-simple.yaml
-	$(INSTALL_CONF) ./files/nikki.conf $(1)/etc/config/nikki
-	$(INSTALL_BIN) ./files/nikki.init $(1)/etc/init.d/nikki
-	$(INSTALL_BIN) ./files/nikki.upgrade $(1)/lib/upgrade/keep.d/nikki
-	$(INSTALL_BIN) ./files/uci-defaults/firewall.sh $(1)/etc/uci-defaults/99_firewall_nikki
-	$(INSTALL_BIN) ./files/uci-defaults/init.sh $(1)/etc/uci-defaults/99_nikki
-	$(INSTALL_BIN) ./files/uci-defaults/migrate.sh $(1)/etc/uci-defaults/99_nikki_migrate
-	$(INSTALL_DATA) ./files/ucode/include.uc $(1)/usr/share/rpcd/ucode/nikki
-	$(INSTALL_DATA) ./files/ucode/hijack.ut $(1)/usr/share/rpcd/ucode/luci/nikki/hijack.ut
-	$(INSTALL_DATA) ./files/ucode/mixin.uc $(1)/usr/share/rpcd/ucode/luci/nikki/mixin.uc
-	$(INSTALL_DATA) ./files/nftables/geoip_cn.nft $(1)/usr/share/nftables.d/ruleset-post/90-geoip_cn.nft
-	$(INSTALL_DATA) ./files/nftables/geoip6_cn.nft $(1)/usr/share/nftables.d/ruleset-post/91-geoip6_cn.nft
-	$(INSTALL_BIN) ./files/scripts/include.sh $(1)/usr/share/nikki/include.sh
-	$(INSTALL_BIN) ./files/scripts/firewall_include.sh $(1)/usr/share/nikki/firewall_include.sh
-	$(INSTALL_BIN) ./files/scripts/debug.sh $(1)/usr/libexec/nikki/debug.sh
-
-	$(CP) ./files/run/. $(1)/etc/nikki/run/
-endef
-
-define Package/nikki/conffiles
-/etc/config/nikki
-/etc/nikki/mixin.yaml
-/etc/nikki/profiles/mahavpn-simple.yaml
+	$(INSTALL_DATA) $(CURDIR)/files/nikki.upgrade $(1)/lib/upgrade/keep.d/nikki
 endef
 
 define Package/nikki/postrm
