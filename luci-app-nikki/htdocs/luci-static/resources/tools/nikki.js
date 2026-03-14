@@ -118,43 +118,31 @@ return baseclass.extend({
         const profile = await callNikkiProfile({
             'external-ui-name': null,
             'external-controller': null,
-            'external-controller-tls': null,
             'secret': null
         });
         const uiName = profile['external-ui-name'];
         const apiListen = profile['external-controller'];
-        const apiTLSListen = profile['external-controller-tls'];
         const apiSecret = profile['secret'] ?? '';
-        if (!apiListen && !apiTLSListen) {
+        if (!apiListen) {
             return Promise.reject('API has not been configured');
         }
-
-        let protocol;
-        let port;
-        if (apiTLSListen) {
-            protocol = 'https';
-            port = apiTLSListen.substring(apiTLSListen.lastIndexOf(':') + 1);
-        } else {
-            protocol = 'http';
-            port = apiListen.substring(apiListen.lastIndexOf(':') + 1);
-        }
-
+        const apiPort = apiListen.substring(apiListen.lastIndexOf(':') + 1);
         const params = {
             host: window.location.hostname,
             hostname: window.location.hostname,
-            port: port,
+            port: apiPort,
             secret: apiSecret
         };
         const query = new URLSearchParams(params).toString();
         let url;
         if (uiName) {
-            url = `${protocol}://${window.location.hostname}:${port}/ui/${uiName}/?${query}`;
+            url = `http://${window.location.hostname}:${apiPort}/ui/${uiName}/?${query}`;
         } else {
-            url = `${protocol}://${window.location.hostname}:${port}/ui/?${query}`;
+            url = `http://${window.location.hostname}:${apiPort}/ui/?${query}`;
         }
-
-        setTimeout(function () { window.open(url, '_blank') }, 0);
-
+        setTimeout(function() {
+            window.open(url, '_blank')
+        }, 0);
         return Promise.resolve();
     },
 
