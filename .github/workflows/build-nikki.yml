@@ -72,7 +72,7 @@ jobs:
 
       - name: Extract OpenWrt SDK
         run: |
-          rm -rf openwrt-sdk-*
+          find . -maxdepth 1 -type d -name 'openwrt-sdk-*' -exec rm -rf {} +
           tar --use-compress-program=unzstd -xf "${{ matrix.sdk_archive }}"
           SDK_DIR=$(find . -maxdepth 1 -type d -name "openwrt-sdk-*" | head -n 1)
 
